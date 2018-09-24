@@ -4,40 +4,41 @@ Parameters:
   TagProject:
     Type: String
     Description: "Tagging for the stack and its resources"
-  AppName:
+  WebsiteBucketName:
     Type: String
-    Default: MaxAldunatePro
-    Description: "app client name"
+    Description: "bucket associated with hosted zone in route 53"
 Resources:
-  CodeBucket:
-    Type: AWS::S3::Bucket 
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
     Properties:
-      Name: !Join [ "", [!Ref AppName, "_CodeBucket"] ]
-
-  ArtifactStoreBucket:
-    Type: AWS::S3::Bucket 
+      BucketName: !Ref WebsiteBucketName
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html  
+      Tags:
+        -
+         Key: "Project"
+         Value: !Ref TagProject 
+  ArtifactsBucket:
+    Type: AWS::S3::Bucket
     Properties:
-      Name: !Join [ "", [!Ref AppName, "_ArtifactStoreBucket"] ]
-
-  CodePipeline:
-    Type: AWS::CodePipeline::Pipeline
-    Properties:
-      Name: !Join [ "", [!Ref AppName, "_CodePipeline"] ]
-      ArtifactStore: 
-        Location: !Ref ArtifactStoreBucket
-      RestartExecutionOnUpdate: Boolean
-      RoleArn: String
-      Stages:
-      - Stages
-
+      BucketName: !Join ['', [!Ref WebsiteBucketName,"-artifacts"]]
+      Tags:
+        -
+         Key: "Project"
+         Value: !Ref TagProject 
 
 Outputs:
-  CodePipelineName:
-    Description: Code Pipeline Name
-    Value: !Ref CodePipeline
-  CodeBucketName:
-    Value: !Ref CodeBucket
-    Description: backet for code to deploy
-  ArtifactStoreBucketName:
-    Value: !Ref ArtifactStoreBucket
-    Description: Bucket for code pipeline artifacts
+  ArtifactsBucketName:
+    Value: !Ref ArtifactsBucket
+    Description: The bucket name for deployed artifacts
+  WebsiteBucketName:
+    Value: !Ref WebsiteBucket
+    Description: The bucket name of our website bucket
+  WebsiteURL:
+    Value: !GetAtt [WebsiteBucket, WebsiteURL]
+    Description: URL for website hosted on S3
+  S3BucketSecureURL:
+    Value: !Join ['', ['https://', !GetAtt [WebsiteBucket, DomainName]]]
+    Description: Name of S3 bucket to hold website content

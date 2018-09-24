@@ -1,6 +1,6 @@
 @echo off
 set profile-user=testuser
-set stack-name=max-aldunate-pro
+set stack-name=max-aldunate-pro-cognito
 set project-tags=max-pro
 set aws-region=eu-west-1
 @echo -
