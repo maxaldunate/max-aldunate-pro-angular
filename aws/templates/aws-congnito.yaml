@@ -1,19 +1,19 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Aws Congnito Components for Identification Server & Dynamo Table for user session
+Description: Max Aldunate Pro Angular. Aws Congnito Components & Dynamo Table for user session
 Parameters:
   TagProject:
     Type: String
     Description: "Tagging for the stack and its resources"
   AppName:
     Type: String
-    Default: LaGuineu
+    Default: MaxAldunatePro
     Description: "Cognito user pools app client name"
 Resources:
   UserSessionDynamoTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: LaguineuUserSession
+      TableName: MaxAldunateProUserSession
       AttributeDefinitions:
         - 
           AttributeName: userId
