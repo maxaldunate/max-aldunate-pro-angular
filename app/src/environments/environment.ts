@@ -3,9 +3,9 @@ export const environment = {
 
     region: 'eu-west-1',
 
-    identityPoolId: 'eu-west-1:328d1350-9062-4cae-8d5b-9e2994876672',
-    userPoolId: 'eu-west-1_or3yPNDxf',
-    clientId: '14qusra5ervs5fbn41c33cs80v',
+    identityPoolId: 'eu-west-1:e3dcfc85-25c6-46e1-bb8b-b7383df9b596',
+    userPoolId: 'eu-west-1_qxhAnf5rH',
+    clientId: '1phu3javmk64v5gnffpmqk23pj',
 
     rekognitionBucket: 'rekognition-pics',
     albumName: "usercontent",
