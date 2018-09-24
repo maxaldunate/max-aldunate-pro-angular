@@ -9,7 +9,7 @@ set aws-region=eu-west-1
 
 @echo validating ...
 CALL aws cloudformation validate-template ^
-         --template-body file://templates/aws-congnito.yaml ^
+         --template-body file://aws-congnito.yaml ^
          --profile %profile-user% ^
          --region %aws-region%
 @echo -

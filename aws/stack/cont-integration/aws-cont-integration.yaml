@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Max Aldunate Pro Angular. Continuous integration mechanism
+Parameters:
+  TagProject:
+    Type: String
+    Description: "Tagging for the stack and its resources"
+  AppName:
+    Type: String
+    Default: MaxAldunatePro
+    Description: "app client name"
+Resources:
+  CodeBucket:
+    Type: AWS::S3::Bucket 
+    Properties:
+      Name: !Join [ "", [!Ref AppName, "_CodeBucket"] ]
+
+  ArtifactStoreBucket:
+    Type: AWS::S3::Bucket 
+    Properties:
+      Name: !Join [ "", [!Ref AppName, "_ArtifactStoreBucket"] ]
+
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Join [ "", [!Ref AppName, "_CodePipeline"] ]
+      ArtifactStore: 
+        Location: !Ref ArtifactStoreBucket
+      RestartExecutionOnUpdate: Boolean
+      RoleArn: String
+      Stages:
+      - Stages
+
+
+Outputs:
+  CodePipelineName:
+    Description: Code Pipeline Name
+    Value: !Ref CodePipeline
+  CodeBucketName:
+    Value: !Ref CodeBucket
+    Description: backet for code to deploy
+  ArtifactStoreBucketName:
+    Value: !Ref ArtifactStoreBucket
+    Description: Bucket for code pipeline artifacts

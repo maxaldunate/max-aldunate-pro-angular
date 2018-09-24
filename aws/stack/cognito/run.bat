@@ -12,15 +12,15 @@ set aws-region=eu-west-1
 @echo -
 @echo cloudformation package ...
 CALL aws cloudformation package ^
-    --template-file templates/aws-congnito.yaml ^
-    --output-template-file templates/aws-congnito-deploy.yaml ^
+    --template-file aws-congnito.yaml ^
+    --output-template-file aws-congnito-deploy.yaml ^
     --s3-bucket laguineu-deploy ^
     --profile %profile-user%
 @echo -
 @echo cloudformation deploy ...
 CALL aws cloudformation deploy ^
      --region %aws-region% ^
-     --template-file templates/aws-congnito-deploy.yaml ^
+     --template-file aws-congnito-deploy.yaml ^
      --stack-name %stack-name% ^
      --capabilities CAPABILITY_IAM ^
      --profile %profile-user% ^
