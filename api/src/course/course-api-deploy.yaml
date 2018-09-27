@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Max Aldunate Pro API
+Outputs:
+  TableCourseName:
+    Description: TableCourse name
+    Value:
+      Ref: TableCourse
+Parameters:
+  SwaggerS3File:
+    Default: course-fn.js
+    Description: The uploaded swagger.yaml
+    Type: String
+  TagProject:
+    Description: Tagging for the stack and its resources
+    Type: String
+Resources:
+  ApiGatewayApi:
+    Properties:
+      Cors: '''*'''
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location:
+              Ref: SwaggerS3File
+      Name: ApiGatewayApi
+      StageName: Prod
+    Type: AWS::Serverless::Api
+  FnCourse:
+    Properties:
+      CodeUri: s3://angularmax.aldunate.pro-artifacts/685d1289a65b00b2e6d71fdc37208f5e
+      Events:
+        ProxyApiRoot:
+          Properties:
+            Method: get
+            Path: /course
+            RestApiId:
+              Ref: ApiGatewayApi
+          Type: Api
+      Handler: course-fn.getById
+      Runtime: nodejs6.10
+    Type: AWS::Serverless::Function
+  TableCourse:
+    Properties:
+      PrimaryKey:
+        Name: id
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      TableName: lg-course
+      Tags:
+        Project:
+          Ref: TagProject
+    Type: AWS::Serverless::SimpleTable
+Transform: AWS::Serverless-2016-10-31

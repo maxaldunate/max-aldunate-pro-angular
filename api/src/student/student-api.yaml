@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Zucchini Secure Serveless API
+Parameters:
+  TagProject:
+    Type: String
+    Description: Tagging for the stack and its resources
+Resources:
+
+  TableStudent:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: lg-student
+      PrimaryKey:
+        Name: id
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      Tags:
+        -
+         Key: "Project"
+         Value: !Ref TagProject 
+
+Outputs:
+
+  TableStudentName:
+    Description: Table 'course' name
+    Value: !Ref TableStudent

@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Max Aldunate Pro API
+Parameters: 
+  TagProject:
+    Type: String
+    Description: Tagging for the stack and its resources
+  SwaggerS3File:
+    Type: String
+    Default: course-fn.js
+    Description: The uploaded swagger.yaml    
+Resources:
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: ApiGatewayApi
+      StageName: Prod
+      Cors: "'*'"
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: !Ref 'SwaggerS3File'     
+
+  FnCourse:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: course-fn.getById
+      Runtime: nodejs6.10
+      Events:
+        ProxyApiRoot:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /course
+            Method: get
+  
+  TableCourse:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: lg-course
+      PrimaryKey:
+        Name: id
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      Tags:
+        Project: !Ref TagProject
+        
+Outputs:
+
+  # FnCourseName:
+  #   Description: FnCourse name
+  #   Value: !Ref FnCourse
+
+  TableCourseName:
+    Description: TableCourse name
+    Value: !Ref TableCourse
+
+  # ApiGatewayApiName:
+  #   Description: ApiGatewayApi name
+  #   Value: !Ref ApiGatewayApi
+
+  # ApiGatewayId:
+  #     Description: "API Gateway endpoint URL for Production https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  #     Value: !Ref ApiGatewayApi
+
+  # ApiGatewayUrl:
+  #   Description: URL of your API endpoint
+  #   Value: !Join
+  #     - ''
+  #     - - https://
+  #       - !Ref ApiGatewayApi
+  #       - '.execute-api.'
+  #       - !Ref 'AWS::Region'
+  #       - '.amazonaws.com/Prod'
