@@ -1,6 +1,28 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Max Aldunate Pro API
 Outputs:
+  ApiGatewayApiName:
+    Description: ApiGatewayApi name
+    Value:
+      Ref: ApiGatewayApi
+  ApiGatewayId:
+    Description: API Gateway endpoint URL for Production https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/
+    Value:
+      Ref: ApiGatewayApi
+  ApiGatewayUrl:
+    Description: URL of your API endpoint
+    Value:
+      Fn::Join:
+      - ''
+      - - https://
+        - Ref: ApiGatewayApi
+        - .execute-api.
+        - Ref: AWS::Region
+        - .amazonaws.com/Prod
+  FnCourseName:
+    Description: FnCourse name
+    Value:
+      Ref: FnCourse
   TableCourseName:
     Description: TableCourse name
     Value:
@@ -28,7 +50,7 @@ Resources:
     Type: AWS::Serverless::Api
   FnCourse:
     Properties:
-      CodeUri: s3://angularmax.aldunate.pro-artifacts/685d1289a65b00b2e6d71fdc37208f5e
+      CodeUri: s3://angularmax.aldunate.pro-artifacts/96edb677827b6b81d04fb02f903cb0b2
       Events:
         ProxyApiRoot:
           Properties:

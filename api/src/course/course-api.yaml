@@ -51,28 +51,28 @@ Resources:
         
 Outputs:
 
-  # FnCourseName:
-  #   Description: FnCourse name
-  #   Value: !Ref FnCourse
+  FnCourseName:
+    Description: FnCourse name
+    Value: !Ref FnCourse
 
   TableCourseName:
     Description: TableCourse name
     Value: !Ref TableCourse
 
-  # ApiGatewayApiName:
-  #   Description: ApiGatewayApi name
-  #   Value: !Ref ApiGatewayApi
+  ApiGatewayApiName:
+    Description: ApiGatewayApi name
+    Value: !Ref ApiGatewayApi
 
-  # ApiGatewayId:
-  #     Description: "API Gateway endpoint URL for Production https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  #     Value: !Ref ApiGatewayApi
+  ApiGatewayId:
+      Description: "API Gateway endpoint URL for Production https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+      Value: !Ref ApiGatewayApi
 
-  # ApiGatewayUrl:
-  #   Description: URL of your API endpoint
-  #   Value: !Join
-  #     - ''
-  #     - - https://
-  #       - !Ref ApiGatewayApi
-  #       - '.execute-api.'
-  #       - !Ref 'AWS::Region'
-  #       - '.amazonaws.com/Prod'
+  ApiGatewayUrl:
+    Description: URL of your API endpoint
+    Value: !Join
+      - ''
+      - - https://
+        - !Ref ApiGatewayApi
+        - '.execute-api.'
+        - !Ref 'AWS::Region'
+        - '.amazonaws.com/Prod'
