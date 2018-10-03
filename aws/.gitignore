@@ -5,3 +5,6 @@
 upload.zip
 resetConfig.sh
 *-deploy.yaml
+*-config-value.json
+deploy-scripts/output-config/*
+deploy-scripts/output-stacks/*
