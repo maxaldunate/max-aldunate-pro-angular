@@ -2,6 +2,9 @@ import boto3
 import yaml
 import sys
 import subprocess
+import json
+from pathlib import Path
+
 
 def cfgLoad(filePath):
 	cfg = {}
@@ -49,6 +52,56 @@ def awsSession(cfg):
 	boto3.setup_default_session(profile_name=cfg['profile-user'])
 	boto3.setup_default_session(region_name=cfg['aws-region'])
 
+def composeStackDescribeCommand(cfg, fullOutputFile, stackName):
+	return "aws cloudformation  describe-stacks " + \
+		" --stack-name " + stackName + \
+		" --profile " + cfg['profile-user'] + \
+    	" --region " + cfg['aws-region'] + \
+    	" > " + fullOutputFile
+
+def runShell(command):
+	print("------------------------------------ starts command -------------------------------")
+	print(command)
+	process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+	process.wait()
+	print(process.returncode)
+	print("------------------------------------ end command ----------------------------------")
+
+def extractOutputs(describeFile, outputFile, stackName):
+	outputDict = {"Outputs": []}
+	with open(describeFile, 'r') as f:
+		describeDict = json.load(f)
+
+	for st in describeDict["Stacks"]:
+		if(st["StackName"]==stackName):
+			for out in st["Outputs"]:
+				out["StackName"] = stackName
+				outputDict["Outputs"].append(out)
+	print(outputDict)
+
+	f = Path(outputFile)
+	if not f.is_file():
+		print("fichero NO existe")
+		with open(outputFile, 'w') as f:
+			json.dump(outputDict, f, ensure_ascii=False, sort_keys=True, indent=2)
+	else:
+		print("fichero SI existe")
+		with open(outputFile, 'r') as f:
+			data = json.load(f)
+		print(data)
+		for out in outputDict["Outputs"]:
+			data["Outputs"].append(out)
+		with open(outputFile, 'w') as fw:
+			json.dump(data, fw, ensure_ascii=False, sort_keys=True, indent=2)
+
+
+def runShellStack(command, cfg, stackName):
+	runShell(command)
+	fullOutputFile = cfg['base-dir'] + cfg['output-dir-stacks'] + "\\" + stackName + "-output.json"
+	runShell(composeStackDescribeCommand(cfg, fullOutputFile, stackName))
+	fullConfigOutputFile = cfg['base-dir'] + cfg['output-dir-stacks'] + "\\config-output.json"
+	extractOutputs(fullOutputFile, fullConfigOutputFile, stackName)
+
 def runPrerequisitesStack(cfg):
 	print("===================================================================================")
 	print("Prerequisite Stack")
@@ -64,25 +117,11 @@ def runPrerequisitesStack(cfg):
     	" --tags Project=" + cfg['project-tag'] + \
     	" --parameter-overrides TagProject=" + cfg['project-tag'] + \
     	" AppName=" + cfg['stack-base-name']
-	runShell(command)
-	describeCmd = composeStackDescribeCommand(cfg, stackName)
-	runShell(describeCmd)
+	runShellStack(command, cfg, stackName)
+	
 
 
-def composeStackDescribeCommand(cfg, stackName):
-	return "aws cloudformation  describe-stacks " + \
-		" --stack-name " + stackName + \
-		" --profile " + cfg['profile-user'] + \
-    	" --region " + cfg['aws-region'] + \
-    	" > " + cfg['base-dir'] + cfg['output-dir-stacks'] + "\\" + stackName + "-output.json"
 
-def runShell(command):
-	print("------------------------------------ starts command -------------------------------")
-	print(command)
-	process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-	process.wait()
-	print(process.returncode)
-	print("------------------------------------ end command ----------------------------------")
 
 def main():
 	filePath = sys.argv[1]
