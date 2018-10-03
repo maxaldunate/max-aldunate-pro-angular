@@ -1,0 +1,18 @@
+base-dir: D:\cloud\github\current\adolfo\max-aldunate-pro-angular
+profile-user: testuser
+aws-region: eu-west-1
+stack-base-name: max-aldunate-pro
+project-tag: max-pro
+output-dir-stacks: \aws\deploy-scripts\output-stacks
+output-dir-config: \aws\deploy-scripts\output-config
+prerequisites-stack-file: \aws\deploy-scripts\prerequisites.yaml
+stacks:
+  - name: cognito
+    path: \aws\stack\cognito
+    template-file: aws-cognito.yaml
+  # - name: cont-integration
+  #   path: \aws\stack\cont-integration
+  #   template-file: aws-cont-integration.yaml
+  # - name: api-course
+  #   path: \api\src\course
+  #   template-file: course-api.yaml

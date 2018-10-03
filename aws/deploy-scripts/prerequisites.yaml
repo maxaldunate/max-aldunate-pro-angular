@@ -1,0 +1,24 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Max Aldunate Pro Angular. Stack with prerequisites
+Parameters:
+  TagProject:
+    Type: String
+    Description: "Tagging for the stack and its resources"
+  AppName:
+    Type: String
+    Description: "App name, base for many names"
+Resources:
+
+  DeployPackagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join ['', [!Ref AppName,"-deploy-packages"]]
+      Tags:
+        -
+         Key: "Project"
+         Value: !Ref TagProject 
+
+Outputs:
+  DeployPackagesBucketName:
+    Value: !Ref DeployPackagesBucket
+    Description: The bucket name to deploy packages
