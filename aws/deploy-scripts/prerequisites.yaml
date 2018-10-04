@@ -22,3 +22,11 @@ Outputs:
   DeployPackagesBucketName:
     Value: !Ref DeployPackagesBucket
     Description: The bucket name to deploy packages
+
+  DeployPackagesBucketArn:
+    Value: !GetAtt [DeployPackagesBucket, Arn]
+    Description: The bucket ARN to deploy packages    
+
+  DeployPackagesBucketDomainName:
+    Value: !GetAtt [DeployPackagesBucket, DomainName]
+    Description: The bucket ARN to deploy packages        

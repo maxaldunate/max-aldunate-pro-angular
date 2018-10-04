@@ -10,6 +10,15 @@ stacks:
   - name: cognito
     path: \aws\stack\cognito
     template-file: aws-cognito.yaml
+    parameters-source:
+      -
+        name: unUsedPArameter
+        stackName: prerequisites
+        outputKey: NoKeyAtAll
+      -
+        name: bucketDeployPackages
+        stackName: prerequisites
+        outputKey: DeployPackagesBucketName
   # - name: cont-integration
   #   path: \aws\stack\cont-integration
   #   template-file: aws-cont-integration.yaml
