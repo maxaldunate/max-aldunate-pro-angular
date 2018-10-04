@@ -4,7 +4,7 @@ import sys
 import subprocess
 import json
 from pathlib import Path
-
+import os
 
 def cfgLoad(filePath):
 	cfg = {}
@@ -67,7 +67,7 @@ def runShell(command):
 	print(process.returncode)
 	print("------------------------------------ end command ----------------------------------")
 
-def extractOutputs(describeFile, outputFile, stackName):
+def extractOutputs(describeFile, configOutputFile, stackName):
 	outputDict = {"Outputs": []}
 	with open(describeFile, 'r') as f:
 		describeDict = json.load(f)
@@ -77,32 +77,24 @@ def extractOutputs(describeFile, outputFile, stackName):
 			for out in st["Outputs"]:
 				out["StackName"] = stackName
 				outputDict["Outputs"].append(out)
-	print(outputDict)
 
-	f = Path(outputFile)
-	if not f.is_file():
-		print("fichero NO existe")
-		with open(outputFile, 'w') as f:
-			json.dump(outputDict, f, ensure_ascii=False, sort_keys=True, indent=2)
-	else:
-		print("fichero SI existe")
-		with open(outputFile, 'r') as f:
-			data = json.load(f)
-		print(data)
-		for out in outputDict["Outputs"]:
-			data["Outputs"].append(out)
-		with open(outputFile, 'w') as fw:
-			json.dump(data, fw, ensure_ascii=False, sort_keys=True, indent=2)
+	with open(configOutputFile, 'r') as f:
+		data = json.load(f)
+
+	for out in outputDict["Outputs"]:
+		data["Outputs"].append(out)
+
+	with open(configOutputFile, 'w') as fw:
+		json.dump(data, fw, ensure_ascii=False, sort_keys=True, indent=2)
 
 
-def runShellStack(command, cfg, stackName):
+def runShellStack(command, cfg, stackName, configOutputFile):
 	runShell(command)
 	fullOutputFile = cfg['base-dir'] + cfg['output-dir-stacks'] + "\\" + stackName + "-output.json"
 	runShell(composeStackDescribeCommand(cfg, fullOutputFile, stackName))
-	fullConfigOutputFile = cfg['base-dir'] + cfg['output-dir-stacks'] + "\\config-output.json"
-	extractOutputs(fullOutputFile, fullConfigOutputFile, stackName)
+	extractOutputs(fullOutputFile, configOutputFile, stackName)
 
-def runPrerequisitesStack(cfg):
+def runPrerequisitesStack(cfg, configOutputFile):
 	print("===================================================================================")
 	print("Prerequisite Stack")
 	stackName = cfg['stack-base-name'] + "-prerequisites"
@@ -117,18 +109,25 @@ def runPrerequisitesStack(cfg):
     	" --tags Project=" + cfg['project-tag'] + \
     	" --parameter-overrides TagProject=" + cfg['project-tag'] + \
     	" AppName=" + cfg['stack-base-name']
-	runShellStack(command, cfg, stackName)
+	runShellStack(command, cfg, stackName, configOutputFile)
 	
+def configOutputFileInitialize(cfg):
+	configOutputFile = cfg['base-dir'] + cfg['output-dir-stacks'] + "\\config-output.json"
+	print(configOutputFile)
+	if os.path.isfile(configOutputFile):
+		print("Removing config-output.json file at " + configOutputFile)
+		os.remove(configOutputFile)
+	with open(configOutputFile, 'w') as f:
+		json.dump({"Outputs": []}, f, ensure_ascii=False, sort_keys=True, indent=2)
 
-
-
+	return configOutputFile
 
 def main():
 	filePath = sys.argv[1]
 	cfg = cfgLoad(filePath)
 	awsSession(cfg)
-
-	runPrerequisitesStack(cfg)
+	configOutputFile = configOutputFileInitialize(cfg)
+	runPrerequisitesStack(cfg, configOutputFile)
 	#runStack(cfg, bucketDeployPackages)
 
 if __name__ == '__main__':
