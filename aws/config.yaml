@@ -1,0 +1,31 @@
+project:
+  tag: max-pro
+  stack-base-name: max-aldunate-pro
+
+aws:
+  profile-user: testuser
+  aws-region: eu-west-1    
+
+dir:
+  base: ""
+  output: outputs
+  stacks: stacks
+
+packages-deploy-bucket:
+  stackName: 01-prerequisites
+  outputKey: DeployPackagesBucketName
+
+stacks:
+  - name: 01-prerequisites
+    package: false
+    parameters-source:
+      - name: AppName
+        value: max-aldunate-pro
+
+  - name: 02-cognito
+    package: true
+    parameters-source:
+
+  # - name: api-course
+  #   path: \api\src\course
+  #   template-file: course-api.yaml

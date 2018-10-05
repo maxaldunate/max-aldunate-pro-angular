@@ -1,17 +1,27 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Max Aldunate Pro Angular. Continuous integration mechanism
+Description: Max Aldunate Pro Angular. Stack with prerequisites
 Parameters:
   TagProject:
     Type: String
     Description: "Tagging for the stack and its resources"
-  WebsiteBucketName:
+  AppName:
     Type: String
-    Description: "bucket associated with hosted zone in route 53"
+    Description: "App name, base for many names"
 Resources:
+
+  DeployPackagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join ['', [!Ref AppName,"-deploy-packages"]]
+      Tags:
+        -
+         Key: "Project"
+         Value: !Ref TagProject 
+
   WebsiteBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref WebsiteBucketName
+      BucketName: !Join ['', [!Ref AppName,"-website"]]
       AccessControl: PublicRead
       WebsiteConfiguration:
         IndexDocument: index.html
@@ -19,26 +29,34 @@ Resources:
       Tags:
         -
          Key: "Project"
-         Value: !Ref TagProject 
+         Value: !Ref TagProject
+
   ArtifactsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Join ['', [!Ref WebsiteBucketName,"-artifacts"]]
+      BucketName: !Join ['', [!Ref AppName,"-artifacts"]]
       Tags:
         -
          Key: "Project"
-         Value: !Ref TagProject 
+         Value: !Ref TagProject          
 
 Outputs:
+  DeployPackagesBucketName:
+    Value: !Ref DeployPackagesBucket
+    Description: The bucket name to deploy packages
+
   ArtifactsBucketName:
     Value: !Ref ArtifactsBucket
-    Description: The bucket name for deployed artifacts
+    Description: The bucket name to deploy artifacts
+
   WebsiteBucketName:
     Value: !Ref WebsiteBucket
-    Description: The bucket name of our website bucket
+    Description: The bucket name to deploy packages
+
   WebsiteURL:
     Value: !GetAtt [WebsiteBucket, WebsiteURL]
     Description: URL for website hosted on S3
+
   S3BucketSecureURL:
     Value: !Join ['', ['https://', !GetAtt [WebsiteBucket, DomainName]]]
     Description: Name of S3 bucket to hold website content

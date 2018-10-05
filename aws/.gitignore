@@ -1,10 +1,2 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
-
-
-# Build Artifacts
-upload.zip
-resetConfig.sh
-*-deploy.yaml
-*-config-value.json
-deploy-scripts/output-config/*
-deploy-scripts/output-stacks/*
+outputs
