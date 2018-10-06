@@ -7,25 +7,32 @@ aws:
   aws-region: eu-west-1    
 
 dir:
-  base: ""
-  output: outputs
-  stacks: stacks
+  base: ..\
+  output: aws\outputs
+  stacks: aws\stacks
+  apis: api\src
 
 packages-deploy-bucket:
   stackName: 01-prerequisites
   outputKey: DeployPackagesBucketName
 
+packages-artifacts-bucket:
+  stackName: 01-prerequisites
+  outputKey: ArtifactsBucketName
+
 stacks:
   - name: 01-prerequisites
-    package: false
+    type: NoPackage
     parameters-source:
       - name: AppName
         value: max-aldunate-pro
 
   - name: 02-cognito
-    package: true
+    type: Package
     parameters-source:
 
-  # - name: api-course
-  #   path: \api\src\course
-  #   template-file: course-api.yaml
+  - name: course
+    type: Api
+    parameters-source:
+  #  stackName:
+  #  outputKey:
