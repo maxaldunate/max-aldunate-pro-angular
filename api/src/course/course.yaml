@@ -7,7 +7,6 @@ Parameters:
     Description: Tagging for the stack and its resources
   SwaggerS3File:
     Type: String
-    Default: course-fn.js
     Description: The uploaded swagger.yaml    
 Resources:
 
@@ -21,7 +20,7 @@ Resources:
         'Fn::Transform':
           Name: 'AWS::Include'
           Parameters:
-            Location: !Ref 'SwaggerS3File'     
+            Location: !Ref 'SwaggerS3File'
 
   FnCourse:
     Type: AWS::Serverless::Function
@@ -58,10 +57,6 @@ Outputs:
   TableCourseName:
     Description: TableCourse name
     Value: !Ref TableCourse
-
-  ApiGatewayApiName:
-    Description: ApiGatewayApi name
-    Value: !Ref ApiGatewayApi
 
   ApiGatewayId:
       Description: "API Gateway endpoint URL for Production https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"

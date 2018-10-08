@@ -31,23 +31,10 @@ Resources:
          Key: "Project"
          Value: !Ref TagProject
 
-  ArtifactsBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Join ['', [!Ref AppName,"-artifacts"]]
-      Tags:
-        -
-         Key: "Project"
-         Value: !Ref TagProject          
-
 Outputs:
   DeployPackagesBucketName:
     Value: !Ref DeployPackagesBucket
     Description: The bucket name to deploy packages
-
-  ArtifactsBucketName:
-    Value: !Ref ArtifactsBucket
-    Description: The bucket name to deploy artifacts
 
   WebsiteBucketName:
     Value: !Ref WebsiteBucket
@@ -57,6 +44,6 @@ Outputs:
     Value: !GetAtt [WebsiteBucket, WebsiteURL]
     Description: URL for website hosted on S3
 
-  S3BucketSecureURL:
+  WebsiteSecureURL:
     Value: !Join ['', ['https://', !GetAtt [WebsiteBucket, DomainName]]]
     Description: Name of S3 bucket to hold website content

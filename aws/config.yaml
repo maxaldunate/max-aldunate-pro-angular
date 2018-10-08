@@ -4,7 +4,8 @@ project:
 
 aws:
   profile-user: testuser
-  aws-region: eu-west-1    
+  aws-region: eu-west-1
+  preserve-config-output-file: false
 
 dir:
   base: ..\
@@ -15,24 +16,24 @@ dir:
 packages-deploy-bucket:
   stackName: 01-prerequisites
   outputKey: DeployPackagesBucketName
-
-packages-artifacts-bucket:
-  stackName: 01-prerequisites
-  outputKey: ArtifactsBucketName
+  swagger-file-param-name: SwaggerS3File
 
 stacks:
   - name: 01-prerequisites
     type: NoPackage
+    skip: false
     parameters-source:
       - name: AppName
         value: max-aldunate-pro
 
   - name: 02-cognito
     type: Package
+    skip: false
     parameters-source:
 
   - name: course
     type: Api
+    skip: false
     parameters-source:
   #  stackName:
   #  outputKey:

@@ -5,6 +5,8 @@ import subprocess
 import json
 from pathlib import Path
 import os
+import string
+import random
 
 def cfgLoad(filePath):
 	cfg = {}
@@ -31,7 +33,7 @@ def composeStackDescribeCommand(cfg, fullOutputFile, stackName):
 
 def runShell(command, commandName, commandDescription):
 	print()
-	print("------------------------------------ " + commandName + "  ++  " + commandDescription)
+	print("------------------------------------ " + commandName + "  -->>  " + commandDescription)
 	print(command)
 	process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 	process.wait()
@@ -56,9 +58,11 @@ def extractOutputs(describeFile, cfgOutFile, stackName, simpleStackName):
 
 def configOutputFileInitialize(cfg):
 	cfgOutFile = pathFileBuild(cfg, cfg['dir']['output'], "config-output.json")
-	ifExistRemoveFile(cfgOutFile)
-	with open(cfgOutFile, 'w') as f:
-		json.dump({"Outputs": []}, f, ensure_ascii=False, sort_keys=True, indent=2)
+	if(cfg["aws"]["preserve-config-output-file"] != None and \
+		cfg["aws"]["preserve-config-output-file"]  == False):
+		ifExistRemoveFile(cfgOutFile)
+		with open(cfgOutFile, 'w') as f:
+			json.dump({"Outputs": []}, f, ensure_ascii=False, sort_keys=True, indent=2)
 
 	return cfgOutFile
 
@@ -108,7 +112,7 @@ def getDirs(cfg, st):
 	retVal = {}
 	retVal["stackFullName"] = cfg['project']['stack-base-name'] + "-" + st['name']	
 	if(st["type"]=="Api"):
-		retVal["stackFullName"] = cfg['project']['stack-base-name'] + "-Api-" + st['name']
+		retVal["stackFullName"] = cfg['project']['stack-base-name'] + "-api-" + st['name']
 	retVal["fullFile"] = pathFileBuild(cfg, cfg['dir']['stacks'], st['name'] + ".yaml")
 	retVal["outputDir"] = pathFileBuild(cfg, cfg['dir']['output'], st['name'] + ".yaml")
 	retVal["apiDir"] = pathBuild(cfg, cfg['dir']['apis'])
@@ -126,8 +130,8 @@ def runPackage(cfg, st, cfgOutFile, outputDir, fullFile):
 	runShell(cmdPackage, st['name'], "package")
 	return deployFullFile
 
-def runDeploy(cfg, st, cfgOutFile, deployFullFile, stackFullName):
-	cmd = "aws cloudformation deploy " + \
+def runDeploy(cfg, st, cfgOutFile, deployFullFile, stackFullName, swaggerFileName=""):
+	cmd = " aws cloudformation deploy " + \
     		" --region " + cfg['aws']['aws-region'] + \
     		" --profile " + cfg['aws']['profile-user'] + \
     		" --template-file " + deployFullFile + \
@@ -139,19 +143,30 @@ def runDeploy(cfg, st, cfgOutFile, deployFullFile, stackFullName):
 		for pS in st['parameters-source']:
 			cmd = cmd + " " + pS["name"] + "=" + pS["value"]
 
+	if(st['type']=="Api"):
+		val = getValueForOutput(cfgOutFile, cfg['packages-deploy-bucket']["stackName"], \
+		                                    cfg['packages-deploy-bucket']["outputKey"])
+		val = "s3://" + val + "/" + swaggerFileName
+		cmd = cmd + " " + cfg['packages-deploy-bucket']['swagger-file-param-name'] + "=" + val
+
+
 	runShell(cmd, st['name'], "deploy")
 	fullOutputFile = pathFileBuild(cfg, cfg['dir']['output'], stackFullName + "-output.json")
 	runShell(composeStackDescribeCommand(cfg, fullOutputFile, stackFullName), st['name'], "decribe")
 	extractOutputs(fullOutputFile, cfgOutFile, stackFullName, st['name'])
 
-def copyArtifact(cfg, st, cfgOutFile, apiDir):
-	bk = getValueForOutput(cfgOutFile, cfg['packages-artifacts-bucket']["stackName"], \
-		cfg['packages-artifacts-bucket']["outputKey"])
-	cmd = " aws s3 cp " + apiDir + "\\" + st["name"] + "\\" + st["name"] + "-swagger.yaml s3://" + \
-	    bk + "/" + st["name"] + "-swagger.yaml --sse" + \
+def copyArtifact(cfg, st, cfgOutFile, apiDir, swaggerFileName):
+	bk = getValueForOutput(cfgOutFile, cfg['packages-deploy-bucket']["stackName"], \
+		cfg['packages-deploy-bucket']["outputKey"]) + "/" + swaggerFileName
+	cmd = " aws s3 cp " + apiDir + "\\" + st["name"] + "\\" + st["name"] + "-swagger.yaml" + " s3://" + \
+	    bk + " --sse" + \
 		" --region " + cfg['aws']['aws-region'] + \
 		" --profile " + cfg['aws']['profile-user']
 	runShell(cmd, st['name'], "sync artifacts ")
+
+def idGenerator(size=32):
+	chars = string.ascii_lowercase + string.digits
+	return ''.join(random.choice(chars) for _ in range(size))
 
 def runStack(cfg, st, cfgOutFile):
 	v = getDirs(cfg, st)
@@ -172,8 +187,9 @@ def runStack(cfg, st, cfgOutFile):
 	if(st['parameters-source'] != None):
 		setOutputValue(st['parameters-source'], cfgOutFile)
 	
+	swaggerFileName = st["name"] + "-swagger-"  + idGenerator()  + ".yaml"
 	if(st["type"] == "Api"):
-		copyArtifact(cfg, st, cfgOutFile, apiDir)
+		copyArtifact(cfg, st, cfgOutFile, apiDir, swaggerFileName)
 
 	deployFullFile = fullFile
 	if(st["type"] == "Package"):
@@ -182,7 +198,7 @@ def runStack(cfg, st, cfgOutFile):
 		deployFullFile = runPackage(cfg, st, cfgOutFile, outputDir, \
 			apiDir + "\\" + st['name'] + "\\" + st['name'] + ".yaml")
 
-	runDeploy(cfg, st, cfgOutFile, deployFullFile, stackFullName)
+	runDeploy(cfg, st, cfgOutFile, deployFullFile, stackFullName, swaggerFileName)
 
 
 def main():
@@ -192,7 +208,8 @@ def main():
 	cfgOutFile = configOutputFileInitialize(cfg)
 	
 	for st in cfg['stacks']:
-		runStack(cfg, st, cfgOutFile)
+		if(st["skip"] != None and st["skip"] == False):
+			runStack(cfg, st, cfgOutFile)
 
 	print("========================================================================")
 	print("===========================      FINISH      ===========================")
