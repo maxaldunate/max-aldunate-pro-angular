@@ -7,6 +7,8 @@ from pathlib import Path
 import os
 import string
 import random
+import shutil
+import time
 
 def cfgLoad(filePath):
 	cfg = {}
@@ -86,7 +88,7 @@ def getOutputValue(parametersSource, cfgOutFile, nameParameter):
 			value = out['OutputValue']
 	return value
 
-def getValueForOutput(cfgOutFile, stackName, outputKey):
+def getOutVal(cfgOutFile, stackName, outputKey):
 	outFile = {}
 	with open(cfgOutFile, 'r') as f:
 		outFile = json.load(f)
@@ -100,13 +102,18 @@ def getValueForOutput(cfgOutFile, stackName, outputKey):
 def setOutputValue(parametersSource, cfgOutFile):
 	for pSource in parametersSource:
 		if "value" not in pSource:
-			pSource["value"] = getValueForOutput(cfgOutFile, pSource["stackName"], pSource["outputKey"])
+			pSource["value"] = getOutVal(cfgOutFile, pSource["stackName"], pSource["outputKey"])
 	return parametersSource
 
 def ifExistRemoveFile(file):
 	if os.path.isfile(file):
 		print("Removing file at ... " + file)
 		os.remove(file)
+
+def ifExistRemoveDir(dir):
+	if os.path.isdir(dir):
+		print("Removing dir at ... " + dir)
+		shutil.rmtree(dir)
 
 def getDirs(cfg, st):
 	retVal = {}
@@ -120,7 +127,7 @@ def getDirs(cfg, st):
 
 def runPackage(cfg, st, cfgOutFile, outputDir, fullFile):
 	deployFullFile = outputDir + "-deploy.yaml "
-	bk = getValueForOutput(cfgOutFile, cfg['packages-deploy-bucket']["stackName"], \
+	bk = getOutVal(cfgOutFile, cfg['packages-deploy-bucket']["stackName"], \
 		cfg['packages-deploy-bucket']["outputKey"])
 	cmdPackage = " aws cloudformation package --template-file " + fullFile + \
 		" --output-template-file " + outputDir + "-deploy.yaml" + \
@@ -144,7 +151,7 @@ def runDeploy(cfg, st, cfgOutFile, deployFullFile, stackFullName, swaggerFileNam
 			cmd = cmd + " " + pS["name"] + "=" + pS["value"]
 
 	if(st['type']=="Api"):
-		val = getValueForOutput(cfgOutFile, cfg['packages-deploy-bucket']["stackName"], \
+		val = getOutVal(cfgOutFile, cfg['packages-deploy-bucket']["stackName"], \
 		                                    cfg['packages-deploy-bucket']["outputKey"])
 		val = "s3://" + val + "/" + swaggerFileName
 		cmd = cmd + " " + cfg['packages-deploy-bucket']['swagger-file-param-name'] + "=" + val
@@ -156,7 +163,7 @@ def runDeploy(cfg, st, cfgOutFile, deployFullFile, stackFullName, swaggerFileNam
 	extractOutputs(fullOutputFile, cfgOutFile, stackFullName, st['name'])
 
 def copyArtifact(cfg, st, cfgOutFile, apiDir, swaggerFileName):
-	bk = getValueForOutput(cfgOutFile, cfg['packages-deploy-bucket']["stackName"], \
+	bk = getOutVal(cfgOutFile, cfg['packages-deploy-bucket']["stackName"], \
 		cfg['packages-deploy-bucket']["outputKey"]) + "/" + swaggerFileName
 	cmd = " aws s3 cp " + apiDir + "\\" + st["name"] + "\\" + st["name"] + "-swagger.yaml" + " s3://" + \
 	    bk + " --sse" + \
@@ -200,6 +207,74 @@ def runStack(cfg, st, cfgOutFile):
 
 	runDeploy(cfg, st, cfgOutFile, deployFullFile, stackFullName, swaggerFileName)
 
+def appBuildAndDeploy(cfg, cfgOutFile):
+	appDir = pathBuild(cfg, cfg['dir']['app'])
+	ifExistRemoveDir(appDir + "\\dist")
+
+	print('------------------------------------ Build Distribution  -->  dir info')
+	originalDir = os.path.dirname(os.path.realpath(__file__))
+	print('Aws dir= ' + os.getcwd())
+	os.chdir(appDir)
+	print('App dir= ' + os.getcwd())
+
+	cmd = " ng build --" + cfg['project']['env']
+	runShell(cmd, 'Build Distribution', 'running ng build')
+	
+	distArtifacDir = pathFileBuild(cfg, cfg['dir']['output'], 'dist-artifacts')
+	cmd = "mkdir " + distArtifacDir + " 2>nul"
+	runShell(cmd, 'Build Distribution', 'create dir for artifact file')
+	artifactFile = "dist_artifact" + time.strftime("%Y-%m-%d-%H-%M-%S") + ".zip"
+	cmd = "7z a " + distArtifacDir + "\\" + artifactFile + " .\\dist"
+	runShell(cmd, 'Build Distribution', 'zipping artifact with 7zip')
+
+	# Upload artifact zip
+	bk = getOutVal(cfgOutFile, cfg['packages-deploy-bucket']["stackName"], \
+		cfg['packages-deploy-bucket']["outputKey"])
+	cmd = " aws s3 cp " + distArtifacDir + "\\" + artifactFile + \
+	      "  s3://" + bk + "  --acl private " + \
+		" --region " + cfg['aws']['aws-region'] + \
+		" --profile " + cfg['aws']['profile-user']
+	runShell(cmd, 'Build Distribution', 'uploading artifact to s3')
+
+	# Upload website
+	bk = getOutVal(cfgOutFile, cfg['website-deploy-bucket']["stackName"], \
+		cfg['website-deploy-bucket']["outputKey"])
+	cmd = " aws s3 cp ./dist " + \
+	      "  s3://" + bk + "  --acl public-read --recursive " + \
+		" --region " + cfg['aws']['aws-region'] + \
+		" --profile " + cfg['aws']['profile-user']
+	runShell(cmd, 'Build Distribution', 'uploading dist to website bucket')
+
+	print('------------------------------------ Build Distribution  -->  final dir info')
+	os.chdir(originalDir)
+	print('Aws dir= ' + os.getcwd())
+
+def buildConfigFile(cfg, cOutFile):
+	cfgDict = {}
+	
+	cfgDict['production'] = 'false'
+	cfgDict['region'] = cfg['aws']['aws-region']
+	cfgDict['identityPoolId'] = getOutVal(cOutFile, '02-cognito', 'ConfigIdentityPoolId') #'eu-west-1:e3dcfc85-25c6-46e1-bb8b-b7383df9b596'
+	cfgDict['userPoolId'] = getOutVal(cOutFile, '02-cognito', 'ConfigUserPoolId') # 'eu-west-1_qxhAnf5rH'
+	cfgDict['clientId'] = getOutVal(cOutFile, '02-cognito', 'ConfigClientId') # '1phu3javmk64v5gnffpmqk23pj'
+	cfgDict['rekognitionBucket'] = 'rekognition-pics'
+	cfgDict['albumName'] = "usercontent"
+	cfgDict['bucketRegion'] = cfg['aws']['aws-region']
+	cfgDict['ddbTableName'] = getOutVal(cOutFile, '02-cognito', 'DynamoTableName') # 'MaxAldunateProUserSession'
+	cfgDict['cognito_idp_endpoint'] = ''
+	cfgDict['cognito_identity_endpoint'] = ''
+	cfgDict['sts_endpoint'] = ''
+	cfgDict['dynamodb_endpoint'] = ''
+	cfgDict['s3_endpoint'] = ''
+
+	data = "export const environment = " + json.dumps(cfgDict, separators=(',',':'), indent=2)
+
+	envFile = pathFileBuild(cfg, cfg['dir']['app'] + "\\src\\environments" , "environments." + cfg['project']['env'] + ".ts")
+	print("Env file= " + envFile)
+	print("Data = " + data)
+	
+	f = open(envFile, 'wt', encoding='utf-8')
+	f.write(data)
 
 def main():
 	filePath = sys.argv[1]
@@ -210,6 +285,13 @@ def main():
 	for st in cfg['stacks']:
 		if(st["skip"] != None and st["skip"] == False):
 			runStack(cfg, st, cfgOutFile)
+
+	# BUILD config file
+	buildConfigFile(cfg, cfgOutFile)
+
+	if(cfg['project']['app-build-and-deploy']):
+		appBuildAndDeploy(cfg, cfgOutFile)
+
 
 	print("========================================================================")
 	print("===========================      FINISH      ===========================")

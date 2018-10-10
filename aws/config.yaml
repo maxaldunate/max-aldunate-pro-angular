@@ -1,39 +1,83 @@
 project:
   tag: max-pro
   stack-base-name: max-aldunate-pro
+  app-build-and-deploy: false
+  env: dev
 
 aws:
   profile-user: testuser
   aws-region: eu-west-1
-  preserve-config-output-file: false
+  preserve-config-output-file: true
 
 dir:
   base: ..\
   output: aws\outputs
   stacks: aws\stacks
   apis: api\src
+  app: app
 
 packages-deploy-bucket:
   stackName: 01-prerequisites
   outputKey: DeployPackagesBucketName
   swagger-file-param-name: SwaggerS3File
 
+website-deploy-bucket:
+  stackName: 01-prerequisites
+  outputKey: WebsiteBucketName
+
+config-values:
+  - name: production
+    value: false
+    stackName: 01-prerequisites
+    outputKey: WebsiteBucketName  
+  - name: region
+    value: cfg['aws']['aws-region']
+  - name: identityPoolId
+    stackName: 02-cognito
+    outputKey: ConfigIdentityPoolId  
+  - name: userPoolId
+    stackName: 02-cognito
+    outputKey: ConfigUserPoolId  
+  - name: clientId
+    stackName: 02-cognito
+    outputKey: ConfigClientId  
+  - name: rekognitionBucket
+    value: rekognition-pics
+  - name: albumName
+    value: usercontent
+  - name: bucketRegion
+    value: cfg['aws']['aws-region']
+  - name: clientId
+    stackName: 02-cognito
+    outputKey: DynamoTableName  
+
+  - name: cognito_idp_endpoint
+    value: ''
+  - name: cognito_identity_endpoint
+    value: ''
+  - name: sts_endpoint
+    value: ''
+  - name: dynamodb_endpoint
+    value: ''
+  - name: s3_endpoint
+    value: ''
+
 stacks:
   - name: 01-prerequisites
     type: NoPackage
-    skip: false
+    skip: true
     parameters-source:
       - name: AppName
         value: max-aldunate-pro
 
   - name: 02-cognito
     type: Package
-    skip: false
+    skip: true
     parameters-source:
 
   - name: course
     type: Api
-    skip: false
+    skip: true
     parameters-source:
   #  stackName:
   #  outputKey:
