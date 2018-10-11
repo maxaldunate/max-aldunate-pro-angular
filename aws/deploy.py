@@ -252,27 +252,17 @@ def appBuildAndDeploy(cfg, cfgOutFile):
 def buildConfigFile(cfg, cOutFile):
 	cfgDict = {}
 	
-	cfgDict['production'] = 'false'
-	cfgDict['region'] = cfg['aws']['aws-region']
-	cfgDict['identityPoolId'] = getOutVal(cOutFile, '02-cognito', 'ConfigIdentityPoolId') #'eu-west-1:e3dcfc85-25c6-46e1-bb8b-b7383df9b596'
-	cfgDict['userPoolId'] = getOutVal(cOutFile, '02-cognito', 'ConfigUserPoolId') # 'eu-west-1_qxhAnf5rH'
-	cfgDict['clientId'] = getOutVal(cOutFile, '02-cognito', 'ConfigClientId') # '1phu3javmk64v5gnffpmqk23pj'
-	cfgDict['rekognitionBucket'] = 'rekognition-pics'
-	cfgDict['albumName'] = "usercontent"
-	cfgDict['bucketRegion'] = cfg['aws']['aws-region']
-	cfgDict['ddbTableName'] = getOutVal(cOutFile, '02-cognito', 'DynamoTableName') # 'MaxAldunateProUserSession'
-	cfgDict['cognito_idp_endpoint'] = ''
-	cfgDict['cognito_identity_endpoint'] = ''
-	cfgDict['sts_endpoint'] = ''
-	cfgDict['dynamodb_endpoint'] = ''
-	cfgDict['s3_endpoint'] = ''
+	for k in cfg['config-values']:
+		print(k)
+		if('value' in k):
+			cfgDict[k['name']] = k['value']
+		elif('cfg-values'  in k):
+			cfgDict[k['name']] = cfg[k['cfg-values']['level1']][k['cfg-values']['level2']]
+		elif('stackName' in k):
+			cfgDict[k['name']] = getOutVal(cOutFile, k['stackName'], k['outputKey'])
 
 	data = "export const environment = " + json.dumps(cfgDict, separators=(',',':'), indent=2)
-
 	envFile = pathFileBuild(cfg, cfg['dir']['app'] + "\\src\\environments" , "environments." + cfg['project']['env'] + ".ts")
-	print("Env file= " + envFile)
-	print("Data = " + data)
-	
 	f = open(envFile, 'wt', encoding='utf-8')
 	f.write(data)
 
@@ -286,7 +276,6 @@ def main():
 		if(st["skip"] != None and st["skip"] == False):
 			runStack(cfg, st, cfgOutFile)
 
-	# BUILD config file
 	buildConfigFile(cfg, cfgOutFile)
 
 	if(cfg['project']['app-build-and-deploy']):

@@ -1,13 +1,13 @@
 project:
   tag: max-pro
   stack-base-name: max-aldunate-pro
-  app-build-and-deploy: false
+  app-build-and-deploy: true
   env: dev
 
 aws:
   profile-user: testuser
   aws-region: eu-west-1
-  preserve-config-output-file: true
+  preserve-config-output-file: false
 
 dir:
   base: ..\
@@ -25,13 +25,14 @@ website-deploy-bucket:
   stackName: 01-prerequisites
   outputKey: WebsiteBucketName
 
+
 config-values:
   - name: production
     value: false
-    stackName: 01-prerequisites
-    outputKey: WebsiteBucketName  
   - name: region
-    value: cfg['aws']['aws-region']
+    cfg-values:
+      level1: aws
+      level2: aws-region
   - name: identityPoolId
     stackName: 02-cognito
     outputKey: ConfigIdentityPoolId  
@@ -46,7 +47,9 @@ config-values:
   - name: albumName
     value: usercontent
   - name: bucketRegion
-    value: cfg['aws']['aws-region']
+    cfg-values:
+      level1: aws
+      level2: aws-region
   - name: clientId
     stackName: 02-cognito
     outputKey: DynamoTableName  
@@ -65,19 +68,19 @@ config-values:
 stacks:
   - name: 01-prerequisites
     type: NoPackage
-    skip: true
+    skip: false
     parameters-source:
       - name: AppName
         value: max-aldunate-pro
 
   - name: 02-cognito
     type: Package
-    skip: true
+    skip: false
     parameters-source:
 
   - name: course
     type: Api
-    skip: true
+    skip: false
     parameters-source:
   #  stackName:
   #  outputKey:
